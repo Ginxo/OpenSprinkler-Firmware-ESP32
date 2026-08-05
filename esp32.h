@@ -86,9 +86,10 @@
   extern unsigned char PIN_IOEXP_INT;
 
 
-  #define E0_PIN_BUTTON_1      18 // button 1 - v1pr 18, default 25
-  #define E0_PIN_BUTTON_2      5 // button 2 - v1pr 5, default 0
-  #define E0_PIN_BUTTON_3      17 // button 3 - v1pr 17, default 26
+  // Buttons unused on LCTech ESP32 16-ch relay board (GPIO5 is OE for 74HC595)
+  #define E0_PIN_BUTTON_1      255
+  #define E0_PIN_BUTTON_2      255
+  #define E0_PIN_BUTTON_3      255
   #define E0_PIN_RFRX          255
   #define E0_PIN_RFTX          255
   #define E0_PIN_BOOST         255 // special HW needed
@@ -100,36 +101,41 @@
  
   #define PIN_ETHER_CS         255 // ENC28J60 CS (chip select pin) is 16 on OS 3.2.
 
-  #define USE_IOEXP_SR 0 // '1' uses Shift-register for stations. To use built-in GPIO pins instead, change to  '0' - v1pr's board: 1
+  // LCTech / ChinaLCTECH ESP32 16-channel relay: two cascaded 74HC595
+  #define USE_IOEXP_SR 1 // '1' uses Shift-register for stations. To use built-in GPIO pins instead, change to  '0'
   
   // default
   // #define ON_BOARD_GPIN_LIST     {12,13,14,15,16,255,255,255} //  ESP32 on board pins to be used as sections, 255 = pin not defined
-  // v1pr's board, these are the GPIO pins user for stations - IOEXP PCF/PCA not (yet) supported
-  #define ON_BOARD_GPIN_LIST     {2,4,255,255,255,255,255,255} // was 2,4
+  // only used when USE_IOEXP_SR == 0
+  #define ON_BOARD_GPIN_LIST     {255,255,255,255,255,255,255,255}
   #define PIN_FREE_LIST     {} // no free GPIO pin at the moment
 
   // if set to a real ADC pin, than it means the board has current sensor capabilities
   #define PIN_CURR_SENSE      255 // not used on v1pr's board, so 255, defaut 39
   
-  #define STATION_LOGIC 1 // Zone output logic for relays - 1 => HIGH in ON, 0 => LOW is ON - v1pr board: 1
+  #define STATION_LOGIC 1 // Zone output logic for relays - 1 => HIGH is ON, 0 => LOW is ON
 
   // Rotary Encoder instead of buttons - not used for now, testing/development
   //#define USE_ROTARY_ENCODER
   #define ROTARY_ENCODER_A_PIN 35 // must be interrupt capable PIN!
   #define ROTARY_ENCODER_B_PIN 34
-  #define ROTARY_ENCODER_BUTTON_PIN 5 // this should be same, BUTTON_2, default 33
+  #define ROTARY_ENCODER_BUTTON_PIN 255
   
   //#define BOOT_MENU_V2
 
-  #define SEPARATE_MASTER_VALVE 19
+  // No separate master valve GPIO on this board
+  // #define SEPARATE_MASTER_VALVE 19
 
-  // 74HC595 shift reg
-  // #define IOEXP_SR_OE_PIN // output enable pin, not used now
-  #define IOEXP_SR_DATA_PIN 25 // DS default 18
-  #define IOEXP_SR_CLK_PIN 27 // SH_CP
-  #define IOEXP_SR_LATCH_PIN 32 // ST_CP
+  // 74HC595 shift reg (LCTech ESP32 Relay X16)
+  // https://devices.esphome.io/devices/esp32-relay-x16/
+  #define IOEXP_SR_DATA_PIN  14 // SER / SI
+  #define IOEXP_SR_CLK_PIN   13 // SRCLK / SCK
+  #define IOEXP_SR_LATCH_PIN 12 // RCLK / RCK
+  #define IOEXP_SR_OE_PIN     5 // OE active LOW (HIGH = outputs disabled)
+  #define IOEXP_SR_COUNT      2 // two cascaded 74HC595 = 16 relays
 
-  #define SYS_STATUS_LED_PIN  13
+  // GPIO13 is SR clock on this board — do not use as status LED
+  // #define SYS_STATUS_LED_PIN  13
 
   #define ENABLE_WIFI_ROAMING // if uncommented, than WiFi.begin() will bind with BSSID + channel!
 

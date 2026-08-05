@@ -1125,9 +1125,9 @@ void OpenSprinkler::begin() {
 		PIN_BUTTON_2 = E0_PIN_BUTTON_2;
 		PIN_BUTTON_3 = E0_PIN_BUTTON_3;
 		
-		pinMode(PIN_BUTTON_1, INPUT_PULLUP);
-		pinMode(PIN_BUTTON_2, INPUT_PULLUP);
-		pinMode(PIN_BUTTON_3, INPUT_PULLUP);
+		pinModeExt(PIN_BUTTON_1, INPUT_PULLUP);
+		pinModeExt(PIN_BUTTON_2, INPUT_PULLUP);
+		pinModeExt(PIN_BUTTON_3, INPUT_PULLUP);
 	#else
 		DEBUG_PRINTLN(F("Rotary encoder enabled"));
 		PIN_BUTTON_1 = ROTARY_ENCODER_A_PIN;
@@ -1671,7 +1671,11 @@ void OpenSprinkler::apply_all_station_bits(void (*post_activation_callback)()) {
 		#if defined(ESP32)
 		 else if(drio->type == IOEXP_TYPE_BUILD_IN_GPIO  || drio->type == IOEXP_TYPE_SR){
 			DEBUG_PRINTLN("ESP32 IOEXP");
-			// stations_bits[0] holds the master station zones as a byte
+			// station_bits[0] = zones 1-8; station_bits[1] = zones 9-16 (for 2x 74HC595)
+			uint16_t zone_bits = station_bits[0];
+			#if defined(USE_IOEXP_SR) && USE_IOEXP_SR == 1 && defined(IOEXP_SR_COUNT) && IOEXP_SR_COUNT >= 2
+			zone_bits |= ((uint16_t)station_bits[1] << 8);
+			#endif
 			if (STATION_LOGIC) {
 				DEBUG_PRINTLN("HIGH = On station logic");
 				#if defined(SEPARATE_MASTER_VALVE)
@@ -1688,7 +1692,7 @@ void OpenSprinkler::apply_all_station_bits(void (*post_activation_callback)()) {
 				#endif
 
 				DEBUG_PRINT("Setting i2c stations... ");
-				drio->i2c_write(255, station_bits[0]);
+				drio->i2c_write(255, zone_bits);
 				DEBUG_PRINTLN("done");
 			} else {
 				DEBUG_PRINTLN("LOW = On station logic");
@@ -1701,7 +1705,7 @@ void OpenSprinkler::apply_all_station_bits(void (*post_activation_callback)()) {
 					digitalWrite(SEPARATE_MASTER_VALVE,HIGH);
 				}
 				#endif
-				drio->i2c_write(255,~station_bits[0]);
+				drio->i2c_write(255, ~zone_bits);
 			}
 		} 
 		#endif
