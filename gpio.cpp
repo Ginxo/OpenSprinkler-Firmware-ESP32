@@ -201,16 +201,13 @@ void IOEXP_SR::set_pins_output_mode(){
 
 
 void IOEXP_SR::i2c_write(uint8_t reg, uint16_t v){
-	v = (uint8_t)(v&0xFF) | inputmask;
-  	digitalWrite(IOEXP_SR_LATCH_PIN, LOW);
-	//byte s, sbits;
-	/*
-	for(s=0;s<8;s++) {
-		digitalWrite(IOEXP_SR_CLK_PIN, LOW);
-		digitalWrite(IOEXP_SR_DATA_PIN, (v & ((byte)1<<(7-s))) ? HIGH : LOW );
-	}*/
-	
-	shiftOut(IOEXP_SR_DATA_PIN, IOEXP_SR_CLK_PIN, MSBFIRST, v);
+	(void)reg;
+	digitalWrite(IOEXP_SR_LATCH_PIN, LOW);
+	// Cascaded 74HC595: shift outermost chip first (stations 9-16), then stations 1-8
+#if defined(IOEXP_SR_COUNT) && IOEXP_SR_COUNT >= 2
+	shiftOut(IOEXP_SR_DATA_PIN, IOEXP_SR_CLK_PIN, MSBFIRST, (v >> 8) & 0xFF);
+#endif
+	shiftOut(IOEXP_SR_DATA_PIN, IOEXP_SR_CLK_PIN, MSBFIRST, v & 0xFF);
 	digitalWrite(IOEXP_SR_LATCH_PIN, HIGH);
 }
 #endif

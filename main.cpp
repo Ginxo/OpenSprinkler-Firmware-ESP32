@@ -482,6 +482,12 @@ void do_setup() {
 	  }
 
 	#if defined(USE_IOEXP_SR) && USE_IOEXP_SR == 1
+	  // Disable 74HC595 outputs until station bits are cleared (OE is active LOW)
+	  #if defined(IOEXP_SR_OE_PIN)
+	  pinMode(IOEXP_SR_OE_PIN, OUTPUT);
+	  digitalWrite(IOEXP_SR_OE_PIN, HIGH);
+	  #endif
+
 	  pinMode(IOEXP_SR_LATCH_PIN, OUTPUT);
 	  digitalWrite(IOEXP_SR_LATCH_PIN, HIGH);
 
@@ -489,6 +495,14 @@ void do_setup() {
 	  digitalWrite(IOEXP_SR_CLK_PIN, HIGH);
 	  pinMode(IOEXP_SR_DATA_PIN,  OUTPUT);
 	  digitalWrite(IOEXP_SR_DATA_PIN, LOW);
+
+	  // Clear all shift-register outputs before enabling OE
+	  digitalWrite(IOEXP_SR_LATCH_PIN, LOW);
+	  #if defined(IOEXP_SR_COUNT) && IOEXP_SR_COUNT >= 2
+	  shiftOut(IOEXP_SR_DATA_PIN, IOEXP_SR_CLK_PIN, MSBFIRST, 0x00);
+	  #endif
+	  shiftOut(IOEXP_SR_DATA_PIN, IOEXP_SR_CLK_PIN, MSBFIRST, 0x00);
+	  digitalWrite(IOEXP_SR_LATCH_PIN, HIGH);
 	#endif
 
 	  #if defined(SEPARATE_MASTER_VALVE)
@@ -510,7 +524,6 @@ void do_setup() {
 #else
 	MCUSR &= ~(1<<WDRF);
 #endif
-
 
 	DEBUG_PRINTLN(F("--- Starting setup"));
 	os.begin();          // OpenSprinkler init
@@ -560,6 +573,11 @@ void do_setup() {
 	for(unsigned char sid=0;sid<os.nstations;sid++) {
 		os.switch_special_station(sid, 0);
 	}
+
+	#if defined(ESP32) && defined(USE_IOEXP_SR) && USE_IOEXP_SR == 1 && defined(IOEXP_SR_OE_PIN)
+	// Enable shift-register outputs after all stations are confirmed OFF
+	digitalWrite(IOEXP_SR_OE_PIN, LOW);
+	#endif
 
 	os.button_timeout = LCD_BACKLIGHT_TIMEOUT;
 }
